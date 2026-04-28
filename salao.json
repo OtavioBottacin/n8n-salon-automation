@@ -1,0 +1,756 @@
+{
+  "name": "salao",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "salao",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -608,
+        16
+      ],
+      "id": "3051b889-f0bb-4b88-870a-a46fdb8a0301",
+      "name": "Webhook",
+      "webhookId": "c9fafd62-d834-4069-a612-a92075b891af"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "361269f7-fc91-48cf-96dd-b9bc8936b9ab",
+              "name": "nome",
+              "value": "={{ $json.body.data.Info.PushName }}",
+              "type": "string"
+            },
+            {
+              "id": "aa9fb3b1-ca06-49c1-8eac-f9e807efe4bd",
+              "name": "numero",
+              "value": "={{ ($json.body.data.Info.IsFromMe ? ($json.body.data.Info.RecipientAlt || $json.body.data.Info.Chat) : $json.body.data.Info.Sender).split('@')[0] }}",
+              "type": "string"
+            },
+            {
+              "id": "139f94f8-a819-427c-9fbd-acbdd8b46712",
+              "name": "mensagem",
+              "value": "={{ $json.body.data.Message.conversation.toLowerCase().trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "4cd9b92c-72fc-42a8-b4c7-a2190ae4c79f",
+              "name": "apykey",
+              "value": "SUA_API_KEY_AQUI",
+              "type": "string"
+            },
+            {
+              "id": "7c67e2fb-bbdb-44d5-b582-3c3837d2bf4d",
+              "name": "origem_profissional",
+              "value": "={{ $json.body.data.Info.IsFromMe }}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -112,
+        0
+      ],
+      "id": "50839f44-8788-4ca3-b0bb-1099194a1b0c",
+      "name": "dados"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT estado FROM clientes_estado WHERE numero = '{{ $json.numero }}';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        224,
+        16
+      ],
+      "id": "cb0c71f1-4121-4435-b141-28e55514ce8d",
+      "name": "Execute a SQL query",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "w4CvVz8ApixxQbM2",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO clientes_estado (numero, estado) VALUES ('{{ $('dados').item.json.numero }}', 'encerrado') \nON CONFLICT (numero) DO UPDATE SET estado = 'encerrado';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        864,
+        -176
+      ],
+      "id": "f6ffb0c2-ba74-411e-9d4d-cf0e6117c7bf",
+      "name": "Execute a SQL query1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "w4CvVz8ApixxQbM2",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        864,
+        0
+      ],
+      "id": "80aa5a0b-5def-4e23-a5ac-c7ca23401b42",
+      "name": "end"
+    },
+    {
+      "parameters": {
+        "resource": "sendMessage",
+        "instanceApiKey": "={{ $('dados').item.json.apykey }}",
+        "sendTextNumber": "={{ $('dados').item.json.numero }}",
+        "sendTextContent": "=Olá! Você selecionou a opção *{{ $('dados').item.json.mensagem.match(/^1/) ? 'Pé e mão natural' : $('dados').item.json.mensagem.match(/^2/) ? 'Pé' : $('dados').item.json.mensagem.match(/^3/) ? 'Mão' : $('dados').item.json.mensagem.match(/^4/) ? 'Esmaltação' : $('dados').item.json.mensagem.match(/^5/) ? 'Banho de gel' : $('dados').item.json.mensagem.match(/^6/) ? 'Design de sobrancelhas' : 'Outros assuntos' }}* e já será atendida. Aguarde um momento! ✨",
+        "sendTextDelay": 3000,
+        "sendTextAdditionalFields": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-evolution-go.evoGo",
+      "typeVersion": 1,
+      "position": [
+        1088,
+        144
+      ],
+      "id": "196ce2cc-34cb-4099-a0f5-c513f5fbadd2",
+      "name": "mensagem_aguarde",
+      "credentials": {
+        "evoGoApi": {
+          "id": "gztewBic4X8FuIke",
+          "name": "EvoGo account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "sendMessage",
+        "instanceApiKey": "={{ $('dados').item.json.apykey }}",
+        "sendTextNumber": "={{ $('dados').item.json.numero }}",
+        "sendTextContent": "=Seja muito bem-vinda *{{ $('dados').item.json.nome }}* 🌸\n\nEsse espaço foi criado com muito carinho para mulheres que desejam se cuidar, se reconectar e se sentir ainda mais especiais.\n\nPara iniciar seu atendimento digite o número da opção desejada:\n\n*[ 1 ]* - Pé e mão natural\n*[ 2 ]* - Pé\n*[ 3 ]* - Mão\n*[ 4 ]* - Esmaltação\n*[ 5 ]* - Banho de gel \n*[ 6 ]* - Design de sobrancelhas\n\n*[ 7 ]* - Outros assuntos\n\n*[ Sair ]* - Encerrar atendimento",
+        "sendTextDelay": 5000,
+        "sendTextAdditionalFields": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-evolution-go.evoGo",
+      "typeVersion": 1,
+      "position": [
+        912,
+        464
+      ],
+      "id": "e38c3f8c-efb3-44de-b174-b77d46be0600",
+      "name": "menu_completo",
+      "credentials": {
+        "evoGoApi": {
+          "id": "gztewBic4X8FuIke",
+          "name": "EvoGo account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "035b6879-83fa-41dd-96c8-334d7dc65f47",
+              "leftValue": "={{ $json.origem_profissional }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        32,
+        0
+      ],
+      "id": "cd82a3db-b0c8-468e-81d1-be9a7e5f26bb",
+      "name": "fromme"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        432,
+        -208
+      ],
+      "id": "815a2dd2-d909-45df-99c8-7e83c76b9003",
+      "name": "end1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "921f0b84-11a2-4ec6-b908-f7a8f65b120e",
+              "leftValue": "={{ $('dados').item.json.mensagem }}",
+              "rightValue": "seu atendimento foi finalizado com sucesso.",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        240,
+        -272
+      ],
+      "id": "a3ee5a85-8563-4ade-89ef-872bc7716d74",
+      "name": "msg_encerramento"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO clientes_estado (numero, estado) VALUES ('{{ $('dados').item.json.numero }}', 'encerrado') \nON CONFLICT (numero) DO UPDATE SET estado = 'encerrado';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        432,
+        -368
+      ],
+      "id": "47fd47eb-b0f5-4c2b-af57-aa0d9e2da26a",
+      "name": "encerrado",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "w4CvVz8ApixxQbM2",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "sendMessage",
+        "instanceApiKey": "={{ $('dados').item.json.apykey }}",
+        "sendTextNumber": "={{ $('dados').item.json.numero }}",
+        "sendTextContent": "=Seu atendimento foi finalizado com sucesso. ✨\n\nObrigada pelo contato! Se precisar de algo mais, é só me chamar por aqui.",
+        "sendTextDelay": 3000,
+        "sendTextAdditionalFields": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-evolution-go.evoGo",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        -176
+      ],
+      "id": "6420336c-dcd6-41fb-a68d-4700c1190ea5",
+      "name": "atend_encerrado",
+      "credentials": {
+        "evoGoApi": {
+          "id": "gztewBic4X8FuIke",
+          "name": "EvoGo account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE clientes_estado SET estado = 'encerrado' WHERE numero = '{{ $('dados').item.json.numero }}';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        912,
+        304
+      ],
+      "id": "490b397c-80b5-4981-a608-e3babcbae952",
+      "name": "Execute a SQL query3",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "w4CvVz8ApixxQbM2",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "sendMessage",
+        "instanceApiKey": "={{ $('dados').item.json.apykey }}",
+        "sendTextNumber": "={{ $('dados').item.json.numero }}",
+        "sendTextContent": "=Seu atendimento foi finalizado com sucesso. ✨ \n\nObrigada pelo contato! Se precisar de algo mais, é só me chamar por aqui.",
+        "sendTextDelay": 3000,
+        "sendTextAdditionalFields": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-evolution-go.evoGo",
+      "typeVersion": 1,
+      "position": [
+        1088,
+        304
+      ],
+      "id": "e490ff24-5fcf-4d79-a35e-e2605fc98970",
+      "name": "atend_encerrado1",
+      "credentials": {
+        "evoGoApi": {
+          "id": "gztewBic4X8FuIke",
+          "name": "EvoGo account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "fe3df050-6927-4805-92ea-cb3d46bf2211",
+              "leftValue": "={{ $json.body.event }}",
+              "rightValue": "Message",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -432,
+        16
+      ],
+      "id": "fa414b23-dcf1-4229-ad86-673e57e8669c",
+      "name": "filtro_mensagem_real"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.estado }}",
+                    "rightValue": "aguardando",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "7f4c872f-afd0-4649-b560-e10e6e912c6e"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Em Atendimento"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        416,
+        16
+      ],
+      "id": "09f36d1c-9266-4447-a9e7-f603b90be959",
+      "name": "router_estado_atual"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f007d029-46d6-493b-8fb3-255685fac757",
+              "leftValue": "={{ $('dados').item.json.mensagem }}",
+              "rightValue": "^(4|sair)$",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        624,
+        -80
+      ],
+      "id": "22f167bb-3bd3-4715-a006-52a3a6c83707",
+      "name": "check_quer_sair"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('dados').item.json.mensagem }}",
+                    "rightValue": "^(1|2|3|4|5|6|7|pé|mao|mão|esmaltação|banho|gel|design|sobrancelha|outros)",
+                    "operator": {
+                      "type": "string",
+                      "operation": "regex"
+                    },
+                    "id": "20fd93c1-1165-44da-80cd-d54c91ba8617"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "serviço"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "b0e666cd-85ac-4032-9af8-aeb9d65735bf",
+                    "leftValue": "={{ $('dados').item.json.mensagem }}",
+                    "rightValue": "^sair$",
+                    "operator": {
+                      "type": "string",
+                      "operation": "regex"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "sair-menu"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        624,
+        176
+      ],
+      "id": "669af3d9-3589-4b95-884a-5d5b484b500c",
+      "name": "router_opcoes_menu"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO clientes_estado (numero, estado) VALUES ('{{ $('dados').item.json.numero }}', 'aguardando')\nON CONFLICT (numero) DO UPDATE SET estado = 'aguardando';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        912,
+        144
+      ],
+      "id": "03959ba0-1cb4-4655-93a7-f4bc0b8635b4",
+      "name": "db_iniciar_atendimento",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "w4CvVz8ApixxQbM2",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -256,
+        112
+      ],
+      "id": "667aeb5a-d952-4cd2-bc75-a0d11f33854b",
+      "name": "end2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "filtro_mensagem_real",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "dados": {
+      "main": [
+        [
+          {
+            "node": "fromme",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query": {
+      "main": [
+        [
+          {
+            "node": "router_estado_atual",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query1": {
+      "main": [
+        [
+          {
+            "node": "atend_encerrado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "fromme": {
+      "main": [
+        [
+          {
+            "node": "msg_encerramento",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "msg_encerramento": {
+      "main": [
+        [
+          {
+            "node": "encerrado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "end1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query3": {
+      "main": [
+        [
+          {
+            "node": "atend_encerrado1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "filtro_mensagem_real": {
+      "main": [
+        [
+          {
+            "node": "dados",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "end2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "router_estado_atual": {
+      "main": [
+        [
+          {
+            "node": "check_quer_sair",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "router_opcoes_menu",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "check_quer_sair": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "end",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "router_opcoes_menu": {
+      "main": [
+        [
+          {
+            "node": "db_iniciar_atendimento",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Execute a SQL query3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "menu_completo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "db_iniciar_atendimento": {
+      "main": [
+        [
+          {
+            "node": "mensagem_aguarde",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timeSavedMode": "fixed",
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "saveManualExecutions": true,
+    "saveDataSuccessExecution": "all"
+  },
+  "versionId": "6317f915-6b06-47fe-b98e-7846154a6782",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "558e4581f6cd8424f45fdec0f80c07c45789894d1dc91ba815d43db5a20281f6"
+  },
+  "id": "1FhaIrt4irmYZhC7",
+  "tags": []
+}
